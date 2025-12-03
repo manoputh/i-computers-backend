@@ -27,21 +27,25 @@ export function createProduct(req, res) {
     );
 }
 
-export function getAllProducts(req, res) {
-    if(isAdmin(req)){
+export async function getAllProducts(req, res) {
 
-        Product.find().then(
-            (products)=>{
-                res.json(products)
-            }
-        ).catch(
-            (error)=>{
-                res.status(500).json({
-                    message : "Error fetching products",
-                    error : error.message
-                });
-            }
-        )
+    try {
+        if(isAdmin(req)){
+
+        // Product.find().then(
+        //     (products)=>{
+        //         res.json(products)
+        //     }
+        // ).catch(
+        //     (error)=>{
+        //         res.status(500).json({
+        //             message : "Error fetching products",
+        //             error : error.message
+        //         });
+        //     }
+        // )
+
+        const products = await Product.find();
 
     }else{
 
@@ -58,7 +62,16 @@ export function getAllProducts(req, res) {
             }
         )
     }
+        
+    } catch (error) {
+        res.status(500).json({
+            message : "Error fetching products",
+            error : error.message
+        });
+        
+    }
 }
+    
 
 export function deleteProduct(req, res) {
     if(!isAdmin(req)){
