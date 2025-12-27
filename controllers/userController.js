@@ -1,86 +1,83 @@
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+dotenv.config();
 
 export function createUser(req, res) {
+  const data = req.body;
 
-    const data = req.body;
+  const hashedPassword = bcrypt.hashSync(data.password, 10);
+  const user = new User({
+    email: data.email,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    password: hashedPassword,
+    role: data.role,
+  });
 
-    const hashedPassword = bcrypt.hashSync(data.password, 10);    
-    const user = new User({
-        email : data.email,
-        firstName : data.firstName,
-        lastName : data.lastName,
-        password : hashedPassword,
-        role : data.role,
+  user.save().then(() => {
+    res.json({
+      message: "User created successfully",
     });
-
-    user.save().then(()=>{
-        res.json({
-            message: "User created successfully"
-        })
-    })
-
+  });
 }
 
 export function loginUser(req, res) {
+  const email = req.body.email;
+  const password = req.body.password;
 
-    const email = req.body.email;
-    const password = req.body.password;
+  User.find({ email: email }).then((users) => {
+    if (users.length == 0) {
+      res.status(401).json({
+        message: "User not found",
+      });
+    } else {
+      const user = users[0];
 
-    User.find({email : email}).then(
-        (users)=>{
-            if(users.length == 0){
-                res.json({
-                    message : "User not found"
-                })
-            }
-            else{
-                const user = users[0]
+      const isPasswordCorrect = bcrypt.compareSync(password, user.password);
 
-                const isPasswordCorrect = bcrypt.compareSync(password, user.password);
-                
-                if(isPasswordCorrect){
-                    const payload = {
-                        email: user.email,
-                        firstName: user.firstName,
-                        lastName: user.lastName,
-                        role: user.role,
-                        isemailVerified: user.isemailVerified,
-                        ImageUrl: user.Image
-                    };
+      if (isPasswordCorrect) {
+        const payload = {
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          isemailVerified: user.isemailVerified,
+          ImageUrl: user.Image,
+        };
 
-                    const token = jwt.sign(payload, "secretKey96$2025", { expiresIn: "48h" });
+        const token = jwt.sign(payload, process.env.JWT_SECRET, {
+          expiresIn: "48h",
+        });
 
-                    res.json({
-                        message : "Login successful",
-                        token : token
-                    })
-                }
-                
-                else{
+        res.json({
+          message: "Login successful",
+          role: user.role,
+          token: token,
+        });
+      } else {
+        User.updateOne(
+          { email: email },
+          {
+            invalidTries: user.invalidTries + 1,
+          }
+        );
 
-                    User.updateOne({email:email},{
-                        invalidTries : user.invalidTries + 1
-                    })
-
-                    res.status(401).json({
-                        message : "Invalid password"
-                    })
-                }
-                
-            }      
-        }
-    )
+        res.status(401).json({
+          message: "Invalid password",
+        });
+      }
+    }
+  });
 }
 
-
-export function isAdmin(req){
-    if(req.user == null){
-        return false
-    }
-    if(req.user.role !== 'admin'){
-        return false
-    }
-    return true
+export function isAdmin(req) {
+  if (req.user == null) {
+    return false;
+  }
+  if (req.user.role !== "admin") {
+    return false;
+  }
+  return true;
 }
