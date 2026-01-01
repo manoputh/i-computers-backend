@@ -8,6 +8,13 @@ export function createProduct(req, res) {
       });
    }
 
+   // const body = req.body;
+   // for (const key of ["brand", "model"]) {
+   //    if (typeof body[key] === "string" && body[key].trim() === "") {
+   //       delete body[key];
+   //    }
+   // }
+
    const product = new Product(req.body);
 
    product
@@ -50,11 +57,12 @@ export async function getAllProducts(req, res) {
          //     });
          //  }
          res.json(products);
+         console.log("Fetched all products for admin");
       } else {
          Product.find({ isAvailable: true })
             .then((products) => {
                res.json(products);
-               console.log("Fetched products for non-admin user:", products);
+               console.log("Fetched products for non-admin users");
             })
             .catch((error) => {
                res.status(500).json({
