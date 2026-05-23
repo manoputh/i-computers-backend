@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import productRouter from "./routes/productRouter.js";
 import cors from "cors";
 import dotenv from "dotenv";
+import orderRouter from "./routes/orderRouter.js";
 dotenv.config();
 
 const mongoURI = process.env.MONGO_URL;
@@ -12,7 +13,7 @@ const mongoURI = process.env.MONGO_URL;
 //connect to mongoDB
 
 mongoose.connect(mongoURI).then(() => {
-  console.log("Connected to mongoDB cluster");
+   console.log("Connected to mongoDB cluster");
 });
 
 //create express app
@@ -24,30 +25,31 @@ app.use(cors());
 app.use(express.json());
 
 app.use((req, res, next) => {
-  const authorizationHeader = req.header("Authorization");
+   const authorizationHeader = req.header("Authorization");
 
-  if (authorizationHeader != null) {
-    const token = authorizationHeader.replace("Bearer ", "");
+   if (authorizationHeader != null) {
+      const token = authorizationHeader.replace("Bearer ", "");
 
-    jwt.verify(token, process.env.JWT_SECRET, (error, content) => {
-      if (content == null) {
-        console.log("Invalid token");
-        res.status(401).json({
-          message: "Invalid token",
-        });
-      } else {
-        req.user = content;
-        next();
-      }
-    });
-  } else {
-    next();
-  }
+      jwt.verify(token, process.env.JWT_SECRET, (error, content) => {
+         if (content == null) {
+            console.log("Invalid token");
+            res.status(401).json({
+               message: "Invalid token",
+            });
+         } else {
+            req.user = content;
+            next();
+         }
+      });
+   } else {
+      next();
+   }
 });
 
 app.use("/api/users", userRouter);
 app.use("/api/products", productRouter);
+app.use("/api/orders", orderRouter);
 
 app.listen(3000, () => {
-  console.log("server is running on port 3000");
+   console.log("server is running on port 3000");
 });
